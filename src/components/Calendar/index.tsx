@@ -80,6 +80,9 @@ const CalendarContainer = ({ schedule, auth }: CalendarContainerProps) => {
   const [initialDate, setInitialDate] = useState<Date>();
   const [selectedEvent, setSelectedEvent] = useState<any>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [pairDates, setPairDates] = useState<
+    { date: string; colorClass: string }[]
+  >([]);
 
   const getPlugins = () => {
     const plugins = [dayGridPlugin];
@@ -134,6 +137,7 @@ const CalendarContainer = ({ schedule, auth }: CalendarContainerProps) => {
   };
 
   const generateStaffBasedCalendar = () => {
+    if (!schedule?.staffs || !Array.isArray(schedule.staffs)) return;
     const works: EventInput[] = [];
 
     for (let i = 0; i < schedule?.assignments?.length; i++) {
@@ -182,6 +186,32 @@ const CalendarContainer = ({ schedule, auth }: CalendarContainerProps) => {
       if (offDays?.includes(transformedDate)) highlightedDates.push(date);
     });
 
+    const selectedStaff = schedule?.staffs?.find((staff) => staff.id === selectedStaffId);
+
+    const staffColorMap = new Map<string, string>();
+
+    schedule.staffs.forEach((staff, index) => {
+      const colorClass = classes[index % classes.length];
+      staffColorMap.set(staff.id, colorClass);
+    });
+
+    const pairHighlights: { date: string; colorClass: string }[] = [];
+
+    if (Array.isArray(selectedStaff?.pairList)) {
+      for (let pair of selectedStaff.pairList) {
+        const { startDate, endDate, staffId: withStaffId } = pair;
+
+        const colorClass = staffColorMap.get(withStaffId);
+        if (!colorClass) continue;
+
+        const datesInRange = getDatesBetween(startDate, endDate);
+
+        datesInRange.forEach((date) => {
+          pairHighlights.push({ date, colorClass });
+        });
+      }
+    }
+    setPairDates(pairHighlights);
     setHighlightedDates(highlightedDates);
     setEvents(works);
   };
@@ -306,18 +336,17 @@ const CalendarContainer = ({ schedule, auth }: CalendarContainerProps) => {
             else nextButton.disabled = false;
           }}
           dayCellContent={({ date }) => {
-            const found = validDates().includes(
-              dayjs(date).format("YYYY-MM-DD")
-            );
-            const isHighlighted = highlightedDates.includes(
-              dayjs(date).format("DD-MM-YYYY")
-            );
+            const formattedDate = dayjs(date).format("DD-MM-YYYY");
+
+            const isValid = validDates().includes(dayjs(date).format("YYYY-MM-DD"));
+            const isOff = highlightedDates.includes(formattedDate);
+            const pairEntry = pairDates.find((pd) => pd.date === formattedDate);
 
             return (
               <div
-                className={`${found ? "" : "date-range-disabled"} ${
-                  isHighlighted ? "highlighted-date-orange" : ""
-                } highlightedPair`}
+                className={`${isValid ? "" : "date-range-disabled"} 
+                            ${isOff ? "highlighted-date-orange" : ""} 
+                            ${pairEntry ? `highlightedPair ${pairEntry.colorClass}` : ""}`}
               >
                 {dayjs(date).date()}
               </div>
