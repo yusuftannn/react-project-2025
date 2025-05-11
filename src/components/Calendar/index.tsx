@@ -77,9 +77,9 @@ const CalendarContainer = ({ schedule, auth }: CalendarContainerProps) => {
   const [events, setEvents] = useState<EventInput[]>([]);
   const [highlightedDates, setHighlightedDates] = useState<string[]>([]);
   const [selectedStaffId, setSelectedStaffId] = useState<string | null>(null);
-  const [initialDate, setInitialDate] = useState<Date>(
-    dayjs(schedule?.scheduleStartDate).toDate()
-  );
+  const [initialDate, setInitialDate] = useState<Date>();
+  const [selectedEvent, setSelectedEvent] = useState<any>(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
   const getPlugins = () => {
     const plugins = [dayGridPlugin];
@@ -98,6 +98,11 @@ const CalendarContainer = ({ schedule, auth }: CalendarContainerProps) => {
 
   const getStaffById = (id: string) => {
     return schedule?.staffs?.find((staff) => id === staff.id);
+  };
+
+  const handleEventClick = (clickInfo: any) => {
+    setSelectedEvent(clickInfo.event);
+    setIsModalOpen(true);
   };
 
   const validDates = () => {
@@ -148,6 +153,8 @@ const CalendarContainer = ({ schedule, auth }: CalendarContainerProps) => {
         date: assignmentDate,
         staffId: schedule?.assignments?.[i]?.staffId,
         shiftId: schedule?.assignments?.[i]?.shiftId,
+        shiftStart: schedule?.assignments?.[i]?.shiftStart,
+        shiftEnd: schedule?.assignments?.[i]?.shiftEnd,
         className: `event ${classes[className]} ${
           getAssigmentById(schedule?.assignments?.[i]?.id)?.isUpdated
             ? "highlight"
@@ -174,6 +181,31 @@ const CalendarContainer = ({ schedule, auth }: CalendarContainerProps) => {
     setHighlightedDates(highlightedDates);
     setEvents(works);
   };
+
+
+  const getEarliestAssignmentDate = (): Date => {
+  if (!schedule?.assignments?.length) return new Date();
+
+  const sorted = [...schedule.assignments].sort((a, b) =>
+    dayjs(a.shiftStart).isBefore(b.shiftStart) ? -1 : 1
+  );
+
+  return dayjs(sorted[0].shiftStart).toDate();
+  };
+
+
+  useEffect(() => {
+    if (schedule?.assignments?.length) {
+      const firstDate = getEarliestAssignmentDate();
+      setInitialDate(firstDate);
+
+      calendarRef.current?.getApi().gotoDate(firstDate);
+    }
+
+    setSelectedStaffId(schedule?.staffs?.[0]?.id);
+    generateStaffBasedCalendar();
+  }, [schedule]);
+
 
   useEffect(() => {
     setSelectedStaffId(schedule?.staffs?.[0]?.id);
@@ -226,6 +258,7 @@ const CalendarContainer = ({ schedule, auth }: CalendarContainerProps) => {
           editable={true}
           eventOverlap={true}
           eventDurationEditable={false}
+          eventClick={handleEventClick}
           initialView="dayGridMonth"
           initialDate={initialDate}
           events={events}
@@ -287,6 +320,19 @@ const CalendarContainer = ({ schedule, auth }: CalendarContainerProps) => {
             );
           }}
         />
+        {isModalOpen && selectedEvent && (
+          <div className="event-modal">
+            <div className="modal-content">
+              <button className="modal-button" onClick={() => setIsModalOpen(false)}>Kapat</button>
+              <h3>Etkinlik Detayı</h3>
+              <p><strong>Personel:</strong> {getStaffById(selectedEvent.extendedProps.staffId)?.name}</p>
+              <p><strong>Vardiya:</strong> {selectedEvent.title}</p>
+              <p><strong>Tarih:</strong> {dayjs(selectedEvent.start).format("DD.MM.YYYY")}</p>
+              <p><strong>Başlangıç:</strong> {dayjs(selectedEvent.extendedProps.shiftStart).format("HH:mm")}</p>
+              <p><strong>Bitiş:</strong> {dayjs(selectedEvent.extendedProps.shiftEnd).format("HH:mm")}</p>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

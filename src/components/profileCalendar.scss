@@ -432,3 +432,33 @@
   content: "";
   border-bottom: 5px solid rgba(194, 6, 138, 0.5) !important;
 }
+
+.event-modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: 9999;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0,0,0,0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  .modal-content {
+    background: white;
+    padding: 24px;
+    border-radius: 12px;
+    min-width: 320px;
+    box-shadow: 0 0 10px rgba(0,0,0,0.3);
+
+    .modal-button {
+      float: right;
+      background: #ccc;
+      border: none;
+      padding: 6px 12px;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+  }
+}
