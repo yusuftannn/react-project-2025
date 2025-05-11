@@ -137,6 +137,10 @@ const CalendarContainer = ({ schedule, auth }: CalendarContainerProps) => {
     const works: EventInput[] = [];
 
     for (let i = 0; i < schedule?.assignments?.length; i++) {
+      const assignment = schedule?.assignments?.[i];
+
+      if (assignment.staffId !== selectedStaffId) continue;
+
       const className = schedule?.shifts?.findIndex(
         (shift) => shift.id === schedule?.assignments?.[i]?.shiftId
       );
