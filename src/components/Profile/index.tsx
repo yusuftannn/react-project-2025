@@ -7,12 +7,15 @@ type ProfileCardProps = {
 };
 
 const ProfileCard = ({ profile }: ProfileCardProps) => {
+  const fallbackRole = AuthSession.getRoles();
+  const roleName = profile?.role?.name ?? fallbackRole?.name ?? "Unknown Role";
+
   return (
     <div className="profile-section">
       <div className="profile-info">
-        <h2>Welcome, {profile?.name}</h2>
+        <h2>Welcome, {profile?.name ?? AuthSession.getName()}</h2>
         <p>{profile?.email ?? AuthSession.getEmail()}</p>
-        <p>{/*profile?.role ??*/ AuthSession.getRoles()}</p>
+         <p>{roleName}</p>
       </div>
     </div>
   );
